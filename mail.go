@@ -17,7 +17,7 @@ type MailTransporter interface {
 }
 
 type Mailer struct {
-	globalSubject   string
+	defaultSubject  string
 	senderEmail     string
 	tmplBody        *pongo2.Template
 	tmplSubject     *pongo2.Template
@@ -35,7 +35,7 @@ func NewMailer(
 	nworker uint,
 ) *Mailer {
 	return &Mailer{
-		globalSubject:   globalSubject,
+		defaultSubject:  globalSubject,
 		senderEmail:     senderEmail,
 		csvs:            csvs,
 		mailTransporter: mailTransporter,
@@ -107,7 +107,7 @@ func (m *Mailer) SendAll(ctx context.Context) (err error) {
 
 			subjectStr := string(subjectBt)
 			if subjectStr == "" {
-				subjectStr = m.globalSubject
+				subjectStr = m.defaultSubject
 			}
 			return m.mailTransporter.Send(ctx, subjectStr, m.senderEmail, row.GetCell("email"), body)
 		})

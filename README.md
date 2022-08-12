@@ -1,6 +1,6 @@
 # Mailmerger
 
-Mailmerger customize you email and send to all recipients in the csv.
+Mailmerger, customize your email and send it to all recipients in the csv.
 
 Usage example:
 ```go
@@ -23,7 +23,7 @@ var subjectTmpl = `
 `
 
 defaultSubject := "Hay there!"
-mailer := NewMailer(defaultSubject, sender, &csv, mailTransporterMock, 2)
+mailer := NewMailer(defaultSubject, sender, &csv, mailTransporter, 2)
 mailer.ParseCsv(strings.NewReader(csvStr))
 mailer.ParseBodyTemplate(strings.NewReader(bodyTmpl))
 mailer.ParseSubjectTemplate(strings.NewReader(subjectTmpl))

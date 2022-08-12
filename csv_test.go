@@ -13,8 +13,8 @@ var csvExample = `id,name,email
 789,han doe,han@doe.com
 `
 
-func TestCsvParser_Parse(t *testing.T) {
-	cp := CsvParser{}
+func TestCsv_Parse(t *testing.T) {
+	cp := Csv{}
 
 	err := cp.Parse(strings.NewReader(csvExample))
 	require.NoError(t, err)

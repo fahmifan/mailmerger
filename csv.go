@@ -21,23 +21,38 @@ func (r Row) GetCell(key string) (record string) {
 	return r.records[idx]
 }
 
-// CsvParser a csv parser
-type CsvParser struct {
+// Map transform row into a map
+func (r Row) Map() map[string]interface{} {
+	rmap := make(map[string]interface{}, len(r.records))
+	for header := range r.mapHeaderIndex {
+		rmap[header] = r.GetCell(header)
+	}
+	return rmap
+}
+
+// Csv a csv parser
+type Csv struct {
 	mapHeaderIndex map[string]int
 	rows           []Row
 	sync           sync.Once
 }
 
-func (c *CsvParser) init() {
+func (c *Csv) init() {
 	c.sync.Do(func() {
 		if c == nil {
-			c = &CsvParser{}
+			c = &Csv{}
 		}
 		c.mapHeaderIndex = make(map[string]int)
 	})
 }
 
-func (c *CsvParser) Parse(rd io.Reader) (err error) {
+// IsHeader check if the header is exists
+func (c *Csv) IsHeader(header string) bool {
+	_, ok := c.mapHeaderIndex[header]
+	return ok
+}
+
+func (c *Csv) Parse(rd io.Reader) (err error) {
 	c.init()
 
 	cr := csv.NewReader(rd)
@@ -67,6 +82,6 @@ func (c *CsvParser) Parse(rd io.Reader) (err error) {
 	return nil
 }
 
-func (c *CsvParser) Rows() []Row {
+func (c *Csv) Rows() []Row {
 	return c.rows
 }

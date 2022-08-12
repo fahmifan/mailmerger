@@ -38,7 +38,7 @@ func TestMailer_SendAll(t *testing.T) {
 
 	sender := "test@mail.com"
 	csv := Csv{}
-	mailer := NewMailer(sender, &csv, mailTransporterMock, 1)
+	mailer := NewMailer(sender, &csv, mailTransporterMock, 2)
 
 	err := mailer.ParseCsv(strings.NewReader(pongoCsv))
 	require.NoError(t, err)

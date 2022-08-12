@@ -23,7 +23,15 @@ var subjectTmpl = `
 `
 
 defaultSubject := "Hay there!"
-mailer := NewMailer(defaultSubject, sender, &csv, mailTransporter, 2)
+mailer := NewMailer(&MailerConfig{
+	SenderEmail:     "test@email.com",
+	DefaultSubject:  "Hai there",
+	Concurrency:     2,
+	Transporter:     mailTransporter,
+	CsvSrc:          strings.NewReader(csvStr),
+	BodyTemplate:    strings.NewReader(bodyTmpl),
+	SubjectTemplate: strings.NewReader(subjectTmpl),
+})
 mailer.ParseCsv(strings.NewReader(csvStr))
 mailer.ParseBodyTemplate(strings.NewReader(bodyTmpl))
 mailer.ParseSubjectTemplate(strings.NewReader(subjectTmpl))

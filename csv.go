@@ -30,29 +30,29 @@ func (r Row) Map() map[string]interface{} {
 	return rmap
 }
 
-// Csv a csv parser
-type Csv struct {
+// CSV a csv parser
+type CSV struct {
 	mapHeaderIndex map[string]int
 	rows           []Row
 	sync           sync.Once
 }
 
-func (c *Csv) init() {
+func (c *CSV) init() {
 	c.sync.Do(func() {
 		if c == nil {
-			c = &Csv{}
+			c = &CSV{}
 		}
 		c.mapHeaderIndex = make(map[string]int)
 	})
 }
 
 // IsHeader check if the header is exists
-func (c *Csv) IsHeader(header string) bool {
+func (c *CSV) IsHeader(header string) bool {
 	_, ok := c.mapHeaderIndex[header]
 	return ok
 }
 
-func (c *Csv) Parse(rd io.Reader) (err error) {
+func (c *CSV) Parse(rd io.Reader) (err error) {
 	c.init()
 
 	cr := csv.NewReader(rd)
@@ -85,6 +85,6 @@ func (c *Csv) Parse(rd io.Reader) (err error) {
 	return nil
 }
 
-func (c *Csv) Rows() []Row {
+func (c *CSV) Rows() []Row {
 	return c.rows
 }

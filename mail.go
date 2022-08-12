@@ -8,53 +8,62 @@ import (
 
 	"github.com/flosch/pongo2"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
-type MailTransporter interface {
+type Transporter interface {
 	Send(ctx context.Context, subject, from, to string, body []byte) error
 }
 
-type Mailer struct {
-	defaultSubject  string
-	senderEmail     string
-	tmplBody        *pongo2.Template
-	tmplSubject     *pongo2.Template
-	csvs            *Csv
-	mailTransporter MailTransporter
-	nworker         uint
-	tmplFunc        map[string]pongo2.FilterFunction
+type MailerConfig struct {
+	SenderEmail string
+	// DefaultSubject use when the subject template is empty
+	DefaultSubject  string
+	CsvSrc          io.Reader
+	BodyTemplate    io.Reader
+	SubjectTemplate io.Reader
+	Concurrency     uint
+	Transporter     Transporter
 }
 
-func NewMailer(
-	globalSubject string,
-	senderEmail string,
-	csvs *Csv,
-	mailTransporter MailTransporter,
-	nworker uint,
-) *Mailer {
+type Mailer struct {
+	tmplBody    *pongo2.Template
+	tmplSubject *pongo2.Template
+	csv         *CSV
+	*MailerConfig
+}
+
+// RegisterFilter expose pongo2.RegisterFilter
+func RegisterFilter(name string, fn pongo2.FilterFunction) error {
+	return pongo2.RegisterFilter(name, fn)
+}
+
+func NewMailer(cfg *MailerConfig) *Mailer {
 	return &Mailer{
-		defaultSubject:  globalSubject,
-		senderEmail:     senderEmail,
-		csvs:            csvs,
-		mailTransporter: mailTransporter,
-		nworker:         nworker,
-		tmplFunc: map[string]pongo2.FilterFunction{
-			"title": func(in, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
-				caser := cases.Title(language.English)
-				return pongo2.AsValue(caser.String(in.String())), nil
-			},
-		},
+		csv:          &CSV{},
+		MailerConfig: cfg,
 	}
 }
 
-func (m *Mailer) ParseBodyTemplate(rd io.Reader) (err error) {
+// Parse parse csv & templates
+func (m *Mailer) Parse() (err error) {
+	if err = m.parseCsv(m.CsvSrc); err != nil {
+		return
+	}
+	if err = m.parseBodyTemplate(m.BodyTemplate); err != nil {
+		return
+	}
+	if err = m.parseSubjectTemplate(m.SubjectTemplate); err != nil {
+		return
+	}
+	return
+}
+
+func (m *Mailer) parseBodyTemplate(rd io.Reader) (err error) {
 	m.tmplBody, err = m.parseTmpl(rd)
 	return err
 }
 
-func (m *Mailer) ParseSubjectTemplate(rd io.Reader) (err error) {
+func (m *Mailer) parseSubjectTemplate(rd io.Reader) (err error) {
 	m.tmplSubject, err = m.parseTmpl(rd)
 	return err
 }
@@ -65,33 +74,29 @@ func (m *Mailer) parseTmpl(rd io.Reader) (_ *pongo2.Template, err error) {
 		return
 	}
 
-	for key, val := range m.tmplFunc {
-		pongo2.RegisterFilter(key, val)
-	}
-
 	return pongo2.FromBytes(bt)
 }
 
-func (m *Mailer) ParseCsv(rd io.Reader) (err error) {
-	err = m.csvs.Parse(rd)
+func (m *Mailer) parseCsv(rd io.Reader) (err error) {
+	err = m.csv.Parse(rd)
 	const mandatoryField = "email"
-	if !m.csvs.IsHeader(mandatoryField) {
+	if !m.csv.IsHeader(mandatoryField) {
 		return errors.New("email field is mandatory")
 	}
 	return
 }
 
-// SendAll send email to all recipient from csvs
+// SendAll send email to all recipient from csv
 func (m *Mailer) SendAll(ctx context.Context) (err error) {
-	nworker := m.nworker
-	if nworker == 0 {
-		nworker = 1
+	conc := m.Concurrency
+	if conc == 0 {
+		conc = 1
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.SetLimit(int(nworker))
+	eg.SetLimit(int(conc))
 
-	for _, row := range m.csvs.Rows() {
+	for _, row := range m.csv.Rows() {
 		row := row
 		eg.Go(func() error {
 			rowMap := row.Map()
@@ -107,9 +112,9 @@ func (m *Mailer) SendAll(ctx context.Context) (err error) {
 
 			subjectStr := string(subjectBt)
 			if subjectStr == "" {
-				subjectStr = m.defaultSubject
+				subjectStr = m.DefaultSubject
 			}
-			return m.mailTransporter.Send(ctx, subjectStr, m.senderEmail, row.GetCell("email"), body)
+			return m.Transporter.Send(ctx, subjectStr, m.SenderEmail, row.GetCell("email"), body)
 		})
 	}
 

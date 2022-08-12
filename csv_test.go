@@ -14,7 +14,7 @@ var csvExample = `id,name,email
 `
 
 func TestCsv_Parse(t *testing.T) {
-	cp := Csv{}
+	cp := CSV{}
 
 	err := cp.Parse(strings.NewReader(csvExample))
 	require.NoError(t, err)

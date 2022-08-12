@@ -32,16 +32,17 @@ func TestMailer_SendAll(t *testing.T) {
 	mailTransporterMock := mock_mailmerger.NewMockMailTransporter(ctrl)
 
 	sender := "test@mail.com"
-	csv := Csv{}
-	mailer := NewMailer("Token Registrasi", sender, &csv, mailTransporterMock, 2)
+	mailer := NewMailer(&MailerConfig{
+		SenderEmail:     sender,
+		CsvSrc:          strings.NewReader(pongoCsv),
+		BodyTemplate:    strings.NewReader(pongoBodyTmpl),
+		SubjectTemplate: strings.NewReader(pongoSubjectTmpl),
+		Concurrency:     2,
+		Transporter:     mailTransporterMock,
+		DefaultSubject:  "Hai there",
+	})
 
-	err := mailer.ParseCsv(strings.NewReader(pongoCsv))
-	require.NoError(t, err)
-
-	err = mailer.ParseBodyTemplate(strings.NewReader(pongoBodyTmpl))
-	require.NoError(t, err)
-
-	err = mailer.ParseSubjectTemplate(strings.NewReader(pongoSubjectTmpl))
+	err := mailer.Parse()
 	require.NoError(t, err)
 
 	ctx := context.TODO()

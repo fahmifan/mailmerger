@@ -17,12 +17,12 @@ han@doe.com,han doe,token3
 `
 
 var pongoBodyTmpl = `
-	Selamat pagi {{ name | title }}
+	Selamat pagi {{ name | lower | title }}
 	Berikut adalah token registrasi yang dapat dipakai {{ token }}
 `
 
 var pongoSubjectTmpl = `
-	Token Registrasi {{ name | title }}
+	Token Registrasi {{ name | lower | title }}
 `
 
 func TestMailer_SendAll(t *testing.T) {

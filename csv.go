@@ -62,6 +62,9 @@ func (c *Csv) Parse(rd io.Reader) (err error) {
 	}
 
 	for i, header := range headers {
+		if header == "" {
+			continue
+		}
 		c.mapHeaderIndex[header] = i
 	}
 

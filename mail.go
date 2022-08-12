@@ -3,6 +3,7 @@ package mailmerger
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/flosch/pongo2"
@@ -96,12 +97,12 @@ func (m *Mailer) SendAll(ctx context.Context) (err error) {
 			rowMap := row.Map()
 			body, err := m.tmplBody.ExecuteBytes(pongo2.Context(rowMap))
 			if err != nil {
-				return err
+				return fmt.Errorf("exec body: %w", err)
 			}
 
 			subjectBt, err := m.tmplSubject.ExecuteBytes(pongo2.Context(rowMap))
 			if err != nil {
-				return err
+				return fmt.Errorf("exec subject: %w", err)
 			}
 
 			subjectStr := string(subjectBt)

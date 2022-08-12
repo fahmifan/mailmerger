@@ -1,11 +1,11 @@
-package mailmerge
+package mailmerger
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"github.com/fahmifan/mailmerge/tests/mock_mailmerge"
+	"github.com/fahmifan/mailmerger/tests/mock_mailmerger"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func TestMailer_SendAll(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mailTransporterMock := mock_mailmerge.NewMockMailTransporter(ctrl)
+	mailTransporterMock := mock_mailmerger.NewMockMailTransporter(ctrl)
 
 	sender := "test@mail.com"
 	csv := Csv{}

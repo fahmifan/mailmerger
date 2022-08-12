@@ -1,4 +1,4 @@
-package mailmerge
+package mailmerger
 
 import (
 	"strings"

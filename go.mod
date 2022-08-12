@@ -1,4 +1,4 @@
-module github.com/fahmifan/mailmerge
+module github.com/fahmifan/mailmerger
 
 go 1.19
 

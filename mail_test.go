@@ -17,18 +17,9 @@ han@doe.com,han doe,token3
 `
 
 var pongoTmpl = `
-	Selamat pagi {{ name }}
+	Selamat pagi {{ name | title }}
 	Berikut adalah token yang dapat dipakai {{ token }}
 `
-
-var _ MailTransporter = (*MailTransporterMock)(nil)
-
-type MailTransporterMock struct {
-}
-
-func (m *MailTransporterMock) Send(ctx context.Context, from, to string, body []byte) error {
-	return nil
-}
 
 func TestMailer_SendAll(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -51,7 +42,7 @@ func TestMailer_SendAll(t *testing.T) {
 		DoAndReturn(func(ctx context.Context, from, to string, body []byte) error {
 			bodyStr := string(body)
 			if to == "john@doe.com" {
-				require.Contains(t, bodyStr, `Selamat pagi john doe`)
+				require.Contains(t, bodyStr, `Selamat pagi John Doe`)
 			}
 			if to == "han@doe.com" {
 				require.Contains(t, bodyStr, `Berikut adalah token yang dapat dipakai token3`)

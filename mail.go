@@ -7,6 +7,8 @@ import (
 
 	"github.com/flosch/pongo2"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type MailTransporter interface {
@@ -19,6 +21,7 @@ type Mailer struct {
 	csvs            *Csv
 	mailTransporter MailTransporter
 	nworker         uint
+	tmplFunc        map[string]pongo2.FilterFunction
 }
 
 func NewMailer(
@@ -32,6 +35,12 @@ func NewMailer(
 		csvs:            csvs,
 		mailTransporter: mailTransporter,
 		nworker:         nworker,
+		tmplFunc: map[string]pongo2.FilterFunction{
+			"title": func(in, param *pongo2.Value) (out *pongo2.Value, err *pongo2.Error) {
+				caser := cases.Title(language.English)
+				return pongo2.AsValue(caser.String(in.String())), nil
+			},
+		},
 	}
 }
 
@@ -39,6 +48,10 @@ func (m *Mailer) ParseTemplate(rd io.Reader) (err error) {
 	bt, err := io.ReadAll(rd)
 	if err != nil {
 		return
+	}
+
+	for key, val := range m.tmplFunc {
+		pongo2.RegisterFilter(key, val)
 	}
 
 	tpl, err := pongo2.FromBytes(bt)

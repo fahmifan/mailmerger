@@ -12,12 +12,14 @@ import (
 )
 
 type MailTransporter interface {
-	Send(ctx context.Context, from, to string, body []byte) error
+	Send(ctx context.Context, subject, from, to string, body []byte) error
 }
 
 type Mailer struct {
+	globalSubject   string
 	senderEmail     string
-	template        *pongo2.Template
+	tmplBody        *pongo2.Template
+	tmplSubject     *pongo2.Template
 	csvs            *Csv
 	mailTransporter MailTransporter
 	nworker         uint
@@ -25,12 +27,14 @@ type Mailer struct {
 }
 
 func NewMailer(
+	globalSubject string,
 	senderEmail string,
 	csvs *Csv,
 	mailTransporter MailTransporter,
 	nworker uint,
 ) *Mailer {
 	return &Mailer{
+		globalSubject:   globalSubject,
 		senderEmail:     senderEmail,
 		csvs:            csvs,
 		mailTransporter: mailTransporter,
@@ -44,7 +48,17 @@ func NewMailer(
 	}
 }
 
-func (m *Mailer) ParseTemplate(rd io.Reader) (err error) {
+func (m *Mailer) ParseBodyTemplate(rd io.Reader) (err error) {
+	m.tmplBody, err = m.parseTmpl(rd)
+	return err
+}
+
+func (m *Mailer) ParseSubjectTemplate(rd io.Reader) (err error) {
+	m.tmplSubject, err = m.parseTmpl(rd)
+	return err
+}
+
+func (m *Mailer) parseTmpl(rd io.Reader) (_ *pongo2.Template, err error) {
 	bt, err := io.ReadAll(rd)
 	if err != nil {
 		return
@@ -54,13 +68,7 @@ func (m *Mailer) ParseTemplate(rd io.Reader) (err error) {
 		pongo2.RegisterFilter(key, val)
 	}
 
-	tpl, err := pongo2.FromBytes(bt)
-	if err != nil {
-		return
-	}
-
-	m.template = tpl
-	return
+	return pongo2.FromBytes(bt)
 }
 
 func (m *Mailer) ParseCsv(rd io.Reader) (err error) {
@@ -85,12 +93,22 @@ func (m *Mailer) SendAll(ctx context.Context) (err error) {
 	for _, row := range m.csvs.Rows() {
 		row := row
 		eg.Go(func() error {
-			body, err := m.template.ExecuteBytes(pongo2.Context(row.Map()))
+			rowMap := row.Map()
+			body, err := m.tmplBody.ExecuteBytes(pongo2.Context(rowMap))
 			if err != nil {
 				return err
 			}
 
-			return m.mailTransporter.Send(ctx, m.senderEmail, row.GetCell("email"), body)
+			subjectBt, err := m.tmplSubject.ExecuteBytes(pongo2.Context(rowMap))
+			if err != nil {
+				return err
+			}
+
+			subjectStr := string(subjectBt)
+			if subjectStr == "" {
+				subjectStr = m.globalSubject
+			}
+			return m.mailTransporter.Send(ctx, subjectStr, m.senderEmail, row.GetCell("email"), body)
 		})
 	}
 

@@ -35,15 +35,15 @@ func (m *MockMailTransporter) EXPECT() *MockMailTransporterMockRecorder {
 }
 
 // Send mocks base method.
-func (m *MockMailTransporter) Send(ctx context.Context, from, to string, body []byte) error {
+func (m *MockMailTransporter) Send(ctx context.Context, subject, from, to string, body []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, from, to, body)
+	ret := m.ctrl.Call(m, "Send", ctx, subject, from, to, body)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockMailTransporterMockRecorder) Send(ctx, from, to, body interface{}) *gomock.Call {
+func (mr *MockMailTransporterMockRecorder) Send(ctx, subject, from, to, body interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockMailTransporter)(nil).Send), ctx, from, to, body)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockMailTransporter)(nil).Send), ctx, subject, from, to, body)
 }

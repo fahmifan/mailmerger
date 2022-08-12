@@ -16,9 +16,13 @@ jean@doe.com,jean doe,token2
 han@doe.com,han doe,token3
 `
 
-var pongoTmpl = `
+var pongoBodyTmpl = `
 	Selamat pagi {{ name | title }}
-	Berikut adalah token yang dapat dipakai {{ token }}
+	Berikut adalah token registrasi yang dapat dipakai {{ token }}
+`
+
+var pongoSubjectTmpl = `
+	Token Registrasi {{ name | title }}
 `
 
 func TestMailer_SendAll(t *testing.T) {
@@ -29,23 +33,29 @@ func TestMailer_SendAll(t *testing.T) {
 
 	sender := "test@mail.com"
 	csv := Csv{}
-	mailer := NewMailer(sender, &csv, mailTransporterMock, 2)
+	mailer := NewMailer("Token Registrasi", sender, &csv, mailTransporterMock, 2)
 
 	err := mailer.ParseCsv(strings.NewReader(pongoCsv))
 	require.NoError(t, err)
 
-	err = mailer.ParseTemplate(strings.NewReader(pongoTmpl))
+	err = mailer.ParseBodyTemplate(strings.NewReader(pongoBodyTmpl))
+	require.NoError(t, err)
+
+	err = mailer.ParseSubjectTemplate(strings.NewReader(pongoSubjectTmpl))
 	require.NoError(t, err)
 
 	ctx := context.TODO()
-	mailTransporterMock.EXPECT().Send(gomock.Any(), sender, gomock.Any(), gomock.Any()).AnyTimes().
-		DoAndReturn(func(ctx context.Context, from, to string, body []byte) error {
+	mailTransporterMock.EXPECT().Send(gomock.Any(), gomock.Any(), sender, gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(ctx context.Context, subject, from, to string, body []byte) error {
 			bodyStr := string(body)
 			if to == "john@doe.com" {
 				require.Contains(t, bodyStr, `Selamat pagi John Doe`)
 			}
+			if to == "jean@doe.com" {
+				require.Contains(t, subject, `Token Registrasi Jean Doe`)
+			}
 			if to == "han@doe.com" {
-				require.Contains(t, bodyStr, `Berikut adalah token yang dapat dipakai token3`)
+				require.Contains(t, bodyStr, `Berikut adalah token registrasi yang dapat dipakai token3`)
 			}
 			return nil
 		})

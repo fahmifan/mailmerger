@@ -1,0 +1,16 @@
+{
+    "sender": "john@doe.com",
+    "csv_list": "example_list.csv",
+    "template": {
+        "subject": "example_subject.tpl",
+        "body": "example_body.tpl"
+    },
+    "default_subject": "hello world",
+    "concurrency": 4,
+    "smtp": {
+        "host": "localhost",
+        "port": 1025,
+        "username": "john.doe",
+        "password": "secret"
+    }
+}
